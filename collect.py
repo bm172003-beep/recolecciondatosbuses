@@ -3,7 +3,7 @@ import time
 import requests
 import redis
 
-# 1. Conexión segura a Upstash
+# 1. Conexión segura a Upstash 
 REDIS_URL = os.environ.get("UPSTASH_REDIS_URL")
 if not REDIS_URL:
     raise ValueError("Falta la variable de entorno UPSTASH_REDIS_URL")
