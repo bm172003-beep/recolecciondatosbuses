@@ -26,3 +26,4 @@ jobs:
         env:
           UPSTASH_REDIS_URL: ${{ secrets.UPSTASH_REDIS_URL }}
         run: python collect.py
+ 
