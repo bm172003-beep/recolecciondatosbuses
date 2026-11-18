@@ -22,7 +22,7 @@ eventos_insertados = 0
 
 # 3. Iterar sobre las 198 combinaciones
 for ruta in rutas:
-    for direccion in ["I", "V"]:
+    for direccion in ["I", "R"]:
         url = f"{BASE_URL}?route={ruta}&direction={direccion}"
         try:
             response = requests.get(url, headers=HEADERS, timeout=10)
