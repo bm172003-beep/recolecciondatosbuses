@@ -1,0 +1,17 @@
+# Datos fuente: no se versionan (se descargan/colocan a mano, ver README)
+gtfs/*.csv
+gtfs/*.zip
+
+# Resultados generados (se regeneran con consultas.py)
+resultados/*.csv
+resultados/*.md
+!resultados/.gitkeep
+
+# Python / entorno
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secretos - NUNCA subir
+.env

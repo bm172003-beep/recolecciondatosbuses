@@ -1,0 +1,33 @@
+# Proyecto semestral PMD — Red de buses Gran Concepcion
+# Familias: Geoespacial (PostGIS) + Streaming (Redis/Upstash, en la nube, no en este compose)
+#
+#   docker compose up -d --wait
+#   python cargar.py
+#   docker compose exec db psql -U pmd -d transporte
+#   docker compose down         # apaga (datos quedan en el volumen)
+#   docker compose down -v      # apaga y BORRA el volumen
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: pmd_buses_postgis
+    environment:
+      POSTGRES_DB: transporte
+      POSTGRES_USER: pmd
+      POSTGRES_PASSWORD: pmd_pass
+    ports:
+      - "5432:5432"
+    shm_size: 1gb
+    volumes:
+      - pmd_buses_pgdata:/var/lib/postgresql/data
+      - ./gtfs:/gtfs:ro
+      - ./resultados:/resultados
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pmd -d transporte"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pmd_buses_pgdata:
+    name: pmd_buses_pgdata
