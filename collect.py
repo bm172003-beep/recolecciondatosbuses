@@ -25,27 +25,48 @@ BASE_URL = "https://phone.dtpr.transapp.cl/v7/phone/f083f24e-7fee-4fdc-9520-dbbd
 with open("rutas.txt", "r") as f:
     rutas = [line.strip() for line in f.readlines() if line.strip()]
 
-eventos_insertados = 0
-for ruta in rutas:
-    for direccion in ["I", "R"]:   # <-- corregido: antes era ["I", "V"], "V" no es un valor valido de la API
-        url = f"{BASE_URL}?route={ruta}&direction={direccion}"
-        try:
-            response = requests.get(url, headers=HEADERS, timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                for machine in data.get("machines", []):
-                    stream_name = f"telemetry:{ruta}"
-                    client.xadd(stream_name, {
-                        "plate": machine.get("licensePlate", ""),
-                        "lat": str(machine.get("latitude", "")),
-                        "lon": str(machine.get("longitude", "")),
-                        "bearing": str(machine.get("bearing", "")),
-                        "timestamp": machine.get("timestamp", ""),
-                        "direction": direccion
-                    })
-                    eventos_insertados += 1
-        except Exception as e:
-            print(f"Error consultando ruta {ruta}-{direccion}: {e}")
-        time.sleep(0.5)
+def ciclo():
+    eventos_insertados = 0
+    for ruta in rutas:
+        for direccion in ["I", "R"]:   # <-- corregido: antes era ["I", "V"], "V" no es un valor valido de la API
+            url = f"{BASE_URL}?route={ruta}&direction={direccion}"
+            try:
+                response = requests.get(url, headers=HEADERS, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    for machine in data.get("machines", []):
+                        stream_name = f"telemetry:{ruta}"
+                        client.xadd(stream_name, {
+                            "plate": machine.get("licensePlate", ""),
+                            "lat": str(machine.get("latitude", "")),
+                            "lon": str(machine.get("longitude", "")),
+                            "bearing": str(machine.get("bearing", "")),
+                            "timestamp": machine.get("timestamp", ""),
+                            "direction": direccion
+                        })
+                        eventos_insertados += 1
+            except Exception as e:
+                print(f"Error consultando ruta {ruta}-{direccion}: {e}")
+            time.sleep(0.5)
+    print(f"Eventos insertados en este ciclo: {eventos_insertados}", flush=True)
+    return eventos_insertados
 
-print(f"Eventos insertados en este ciclo: {eventos_insertados}")
+
+# Modo de ejecucion:
+#  - LOOP_MINUTES=0 (defecto): un solo ciclo y termina.
+#  - LOOP_MINUTES=340: repite un ciclo cada INTERVAL_MIN minutos (inicio a inicio) durante
+#    ~340 min. Asi el muestreo no depende de que el cron de GitHub Actions dispare a tiempo.
+LOOP_MINUTES = int(os.environ.get("LOOP_MINUTES", "0"))
+INTERVAL_MIN = int(os.environ.get("INTERVAL_MIN", "10"))
+
+if LOOP_MINUTES <= 0:
+    ciclo()
+else:
+    fin = time.time() + LOOP_MINUTES * 60
+    while True:
+        inicio = time.time()
+        ciclo()
+        proximo = inicio + INTERVAL_MIN * 60
+        if proximo >= fin:
+            break
+        time.sleep(max(0, proximo - time.time()))
